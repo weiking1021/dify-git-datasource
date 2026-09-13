@@ -1,0 +1,43 @@
+name: Package and attach plugin to release
+
+# Dify's "Install from GitHub" does not read source files directly - it
+# looks for a GitHub Release with a .difypkg file attached as an asset.
+# This workflow builds that package whenever a release is published and
+# uploads it to that same release, so this repo's GitHub URL is directly
+# installable from Dify without any manual packaging step.
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download Dify plugin CLI
+        run: |
+          mkdir -p "$RUNNER_TEMP/bin"
+          curl -sL -o "$RUNNER_TEMP/bin/dify" \
+            "https://github.com/langgenius/dify-plugin-daemon/releases/download/0.6.10/dify-plugin-linux-amd64"
+          chmod +x "$RUNNER_TEMP/bin/dify"
+
+      - name: Read plugin name/version from manifest.yaml
+        id: manifest
+        run: |
+          NAME=$(grep '^name:' manifest.yaml | head -1 | awk '{print $2}')
+          VERSION=$(grep '^version:' manifest.yaml | head -1 | awk '{print $2}')
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Package plugin
+        run: |
+          "$RUNNER_TEMP/bin/dify" plugin package . \
+            -o "${{ steps.manifest.outputs.name }}-${{ steps.manifest.outputs.version }}.difypkg"
+
+      - name: Attach package to this release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: "${{ steps.manifest.outputs.name }}-${{ steps.manifest.outputs.version }}.difypkg"

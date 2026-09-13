@@ -1,0 +1,88 @@
+identity:
+  author: weiking1021
+  name: git
+  label:
+    en_US: Git
+    zh_Hans: Git
+  description:
+    en_US: Sync files from any git repository (public, or private via an SSH deploy key) into a Knowledge Pipeline.
+    zh_Hans: 從任意 git 倉庫（公開倉庫，或透過 SSH deploy key 存取的私有倉庫）同步檔案到 Knowledge Pipeline。
+  icon: icon.svg
+provider_type: online_document
+credentials_schema:
+  - name: auth_mode
+    type: select
+    required: true
+    default: none
+    label:
+      en_US: Authentication mode
+      zh_Hans: 認證方式
+    options:
+      - value: none
+        label:
+          en_US: No authentication (public repository)
+          zh_Hans: 不需要認證（公開倉庫）
+      - value: ssh_key
+        label:
+          en_US: SSH deploy key
+          zh_Hans: SSH deploy key
+  - name: ssh_private_key
+    type: secret-input
+    required: false
+    label:
+      en_US: SSH private key
+      zh_Hans: SSH 私鑰
+    placeholder:
+      en_US: "-----BEGIN OPENSSH PRIVATE KEY-----..."
+      zh_Hans: "-----BEGIN OPENSSH PRIVATE KEY-----..."
+    help:
+      en_US: Required only when authentication mode is "SSH deploy key". Supports OpenSSH, PEM and PKCS8 formats (RSA, Ed25519, ECDSA).
+      zh_Hans: 僅在認證方式為「SSH deploy key」時需要。支援 OpenSSH、PEM、PKCS8 格式（RSA、Ed25519、ECDSA）。
+  - name: ssh_key_passphrase
+    type: secret-input
+    required: false
+    label:
+      en_US: SSH private key passphrase
+      zh_Hans: SSH 私鑰密碼短語
+    help:
+      en_US: Leave blank if the private key is not passphrase-protected.
+      zh_Hans: 若私鑰沒有設定密碼短語，留空即可。
+  - name: dify_api_base_url
+    type: text-input
+    required: false
+    default: "http://api:5001"
+    label:
+      en_US: Dify API base URL (optional)
+      zh_Hans: Dify API 網址（選填）
+    placeholder:
+      en_US: "https://api.dify.ai or http://your-dify-host"
+      zh_Hans: "https://api.dify.ai 或 http://your-dify-host"
+    help:
+      en_US: >-
+        Only needed if a datasource node enables "Verify against existing knowledge base documents". Dify's
+        plugin sandbox deliberately does not expose its own instance's URL to plugin code (a security
+        boundary, not an oversight), so this can't be auto-detected. The default "http://api:5001" is a
+        best-effort guess for the standard self-hosted docker-compose layout, where the plugin process can
+        usually reach the "api" service by its container name on the shared network - it will NOT work for
+        Kubernetes, serverless plugin execution, or a renamed/custom "api" service, so change it if your
+        deployment differs.
+      zh_Hans: >-
+        僅在 datasource 節點啟用「比對知識庫既有文件」時需要。Dify 的插件沙盒刻意不會把自己實例的網址暴露給插件
+        程式碼（這是安全邊界，不是遺漏），所以沒辦法自動偵測。預設值「http://api:5001」是針對標準自架
+        docker-compose 佈署的猜測值——在這種佈署下，插件行程通常可以透過同一個網路裡的 container 名稱連到
+        「api」服務。如果你是用 Kubernetes、serverless 插件執行模式，或把「api」服務改了名字，這個預設值就
+        不會有效，請自行修改。
+  - name: dify_api_key
+    type: secret-input
+    required: false
+    label:
+      en_US: Dify API key (optional)
+      zh_Hans: Dify API key（選填）
+    help:
+      en_US: Only needed if a datasource node enables "Verify against existing knowledge base documents". Generate one under the target Knowledge Base's API Access settings in Dify.
+      zh_Hans: 僅在 datasource 節點啟用「比對知識庫既有文件」時需要。可以在目標知識庫的 API 存取設定裡生成。
+datasources:
+  - datasources/git.yaml
+extra:
+  python:
+    source: provider/git.py
