@@ -3,7 +3,7 @@
 Used only when "Verify against existing knowledge base documents" is
 enabled. It queries the dataset this pipeline feeds into directly, to
 check which files have already been ingested as real documents, and
-(optionally) to archive superseded versions of a file once a newer commit's
+(optionally) to archive superseded versions of a file once a newer content
 version is confirmed present. Unlike the plugin's own session.storage-based
 tracking, this is immune to the preview button/wizard triggering a false
 "already synced" state, since previewing a file does not create a real

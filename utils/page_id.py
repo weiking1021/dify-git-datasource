@@ -14,7 +14,13 @@ from typing import Any
 
 
 def encode_page_id(
-    repo_url: str, branch: str, sha: str, path: str, dataset_id: str, archive_superseded: bool
+    repo_url: str,
+    branch: str,
+    sha: str,
+    path: str,
+    dataset_id: str,
+    archive_superseded: bool,
+    blob_sha: str,
 ) -> str:
     payload = json.dumps(
         {
@@ -24,6 +30,7 @@ def encode_page_id(
             "path": path,
             "dataset_id": dataset_id,
             "archive_superseded": archive_superseded,
+            "blob_sha": blob_sha,
         }
     )
     return base64.urlsafe_b64encode(payload.encode()).decode()

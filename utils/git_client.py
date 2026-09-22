@@ -91,12 +91,20 @@ def fetch_repo_state(repo_url: str, branch: str | None, credentials: dict) -> tu
     return mem_repo, head_sha
 
 
-def list_tree_files(repo: MemoryRepo, tree_sha: bytes) -> list[str]:
-    paths = []
+def list_tree_files(repo: MemoryRepo, tree_sha: bytes) -> list[tuple[str, str]]:
+    """Return (path, blob_sha_hex) for every regular file in the tree.
+
+    The blob SHA is git's own content hash for that file - identical bytes
+    always produce the same blob SHA regardless of which commit touched it,
+    so it's used elsewhere as a content-version fingerprint that only
+    changes when a file's actual content changes (unlike the commit SHA of
+    HEAD, which changes on every commit anywhere in the repo).
+    """
+    entries = []
     for entry in iter_tree_contents(repo.object_store, tree_sha):
         if _is_regular_file(entry.mode):
-            paths.append(entry.path.decode("utf-8", errors="replace"))
-    return paths
+            entries.append((entry.path.decode("utf-8", errors="replace"), entry.sha.decode()))
+    return entries
 
 
 def commit_time_iso(repo: MemoryRepo, commit_sha: bytes) -> str:

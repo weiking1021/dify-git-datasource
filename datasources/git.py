@@ -40,7 +40,7 @@ class GitDataSource(OnlineDocumentDatasource):
         if archive_superseded and not (use_dataset_verification and tag_with_commit):
             raise ValueError(
                 "'Archive superseded versions' requires both 'Verify against existing knowledge base "
-                "documents' and 'Append commit hash to file names' to also be enabled."
+                "documents' and 'Append content hash to file names' to also be enabled."
             )
 
         extensions = parse_csv(extension_filter)
@@ -51,8 +51,8 @@ class GitDataSource(OnlineDocumentDatasource):
         # of sync with reality (unlike a plugin-side "last synced" marker,
         # which a mere pipeline preview/test-run could silently corrupt).
         repo, head_sha = fetch_repo_state(repo_url, branch, credentials)
-        paths = list_tree_files(repo, repo[head_sha].tree)
-        matched_paths = filter_paths(paths, extensions, path_patterns)
+        path_blob_shas = dict(list_tree_files(repo, repo[head_sha].tree))
+        matched_paths = filter_paths(list(path_blob_shas), extensions, path_patterns)
         head_sha_str = head_sha.decode()
 
         if use_dataset_verification:
@@ -63,16 +63,19 @@ class GitDataSource(OnlineDocumentDatasource):
                     "'Verify against existing knowledge base documents' is enabled but "
                     "dify_api_key (provider credentials) or dataset_id (this parameter) is missing."
                 )
+            matched_path_blob_shas = {p: path_blob_shas[p] for p in matched_paths}
             matched_paths = filter_unsynced_paths(
-                api_base_url, api_key, dataset_id, matched_paths, head_sha_str, tag_with_commit
+                api_base_url, api_key, dataset_id, matched_path_blob_shas, tag_with_commit
             )
 
         last_edited_time = commit_time_iso(repo, head_sha)
 
         pages = [
             {
-                "page_id": encode_page_id(repo_url, branch, head_sha_str, path, dataset_id, archive_superseded),
-                "page_name": page_name(path, head_sha_str, tag_with_commit),
+                "page_id": encode_page_id(
+                    repo_url, branch, head_sha_str, path, dataset_id, archive_superseded, path_blob_shas[path]
+                ),
+                "page_name": page_name(path, path_blob_shas[path], tag_with_commit),
                 "type": "file",
                 "last_edited_time": last_edited_time,
             }
@@ -114,7 +117,7 @@ class GitDataSource(OnlineDocumentDatasource):
             dataset_id = info.get("dataset_id")
             if api_key and dataset_id:
                 to_archive = find_superseded_document_ids(
-                    api_base_url, api_key, dataset_id, info["path"], info["sha"]
+                    api_base_url, api_key, dataset_id, info["path"], info["blob_sha"]
                 )
                 archive_documents(api_base_url, api_key, dataset_id, to_archive)
 

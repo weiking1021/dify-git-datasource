@@ -40,85 +40,65 @@ parameters:
     required: false
     default: ".md,.mdx,.txt"
     label:
-      en_US: File extensions to include
-      zh_Hans: 要包含的檔案副檔名
+      en_US: "File extensions to include (comma-separated, e.g. .md,.mdx,.txt)"
+      zh_Hans: "要包含的檔案副檔名（逗號分隔，例如 .md,.mdx,.txt）"
     placeholder:
       en_US: ".md,.mdx,.txt,.py"
       zh_Hans: ".md,.mdx,.txt,.py"
     description:
-      en_US: >-
-        Format: comma-separated extensions, each starting with a dot - e.g. ".md,.mdx,.txt" or
-        ".md,.py" - no spaces, no wildcards. Leave empty to include every extension.
-      zh_Hans: >-
-        格式：以逗號分隔的副檔名，每個都要有開頭的點——例如「.md,.mdx,.txt」或「.md,.py」，不要加空格、
-        不支援萬用字元。留空表示不限制副檔名。
+      en_US: Each extension must start with a dot, no spaces, no wildcards. Leave empty to include every extension.
+      zh_Hans: 每個副檔名都要有開頭的點，不要加空格，不支援萬用字元。留空表示不限制副檔名。
   - name: path_filter
     type: string
     required: false
     default: ""
     label:
-      en_US: Path filter
-      zh_Hans: 路徑過濾
+      en_US: "Path filter (comma-separated, e.g. docs/,guides/**/*.md)"
+      zh_Hans: "路徑過濾（逗號分隔，例如 docs/,guides/**/*.md）"
     placeholder:
       en_US: "docs/,guides/**/*.md"
       zh_Hans: "docs/,guides/**/*.md"
     description:
-      en_US: >-
-        Format: comma-separated entries, each either a directory prefix (e.g. "docs/", matches
-        everything under that folder) or a glob pattern (e.g. "guides/**/*.md", matches only .md files
-        under guides/). Leave empty to include every path.
-      zh_Hans: >-
-        格式：以逗號分隔的項目，每個項目可以是目錄前綴（例如「docs/」，代表這個資料夾底下全部都算）或
-        glob 樣式（例如「guides/**/*.md」，只算 guides/ 底下的 .md 檔）。留空表示不限制路徑。
+      en_US: Each entry is either a directory prefix ("docs/", matches everything under it) or a glob ("guides/**/*.md"). Leave empty to include every path.
+      zh_Hans: 每個項目可以是目錄前綴（「docs/」，代表這個資料夾底下全部都算）或 glob 樣式（「guides/**/*.md」）。留空表示不限制路徑。
   - name: tag_filename_with_commit
     type: boolean
     required: false
     default: false
     label:
-      en_US: Append commit hash to file names
-      zh_Hans: 在檔名加上 commit hash
+      en_US: Append content hash to file names
+      zh_Hans: 在檔名加上內容雜湊
     description:
       en_US: >-
-        Naming option, works standalone - doesn't require anything else below. ON: each listed file's
-        name gets a short commit hash before its extension, e.g. "guide@a1b2c3d4e5f6.md" instead of
-        "guide.md". By itself this only changes the displayed document name, nothing else. It becomes
-        functionally important once "Verify against existing knowledge base documents" below is also
-        turned on - see that field for exactly why.
+        Standalone option. ON: appends a short hash of the file's own content before its extension, e.g.
+        "guide@a1b2c3d4e5f6.md". This is the file's git blob hash (content-based), NOT a commit hash - it
+        changes only when this file's own content changes, never when other files in the repo change.
+        Required together with "Verify against existing knowledge base documents" below for that feature
+        to detect real content changes; alone it only affects the displayed name.
       zh_Hans: >-
-        命名選項，單獨開啟也有效，不需要搭配下面任何功能。開啟後，每個列出的檔案名稱會在副檔名前面加上一段
-        簡短的 commit hash，例如「guide@a1b2c3d4e5f6.md」而不是「guide.md」。單獨開啟的話只會改變顯示的
-        文件名稱，不影響其他行為。當下面的「比對知識庫既有文件」也開啟時，這個選項才會真正影響同步邏輯——
-        原因請看那個欄位的說明。
+        獨立選項，單獨開啟也有效。開啟後會在副檔名前加上這個檔案自己內容的雜湊，例如
+        「guide@a1b2c3d4e5f6.md」。這是 git blob hash（內容雜湊），不是 commit hash——只有這個檔案自己的
+        內容真的改變時才會變，repo 裡其他檔案改動不會影響它。要讓下面的「比對知識庫既有文件」能偵測真正的
+        內容變化，這個選項必須跟它一起開啟；單獨開啟只會影響顯示的檔名。
   - name: use_dataset_verification
     type: boolean
     required: false
     default: false
     label:
-      en_US: Verify against existing knowledge base documents (needs Dify API key below)
+      en_US: Verify against existing knowledge base documents (requires Dify API key below)
       zh_Hans: 比對知識庫既有文件（需要下面設定 Dify API key）
     description:
       en_US: >-
-        Requires setup before it works: a Dify API key + API base URL on this provider's credentials,
-        and the dataset ID below - see that field for where to find it. Without those, turning this on
-        will error.
-        OFF (default): every run lists every file matching the filters above, no matter what - simple,
-        but reprocesses everything each time. ON: before listing a file, checks (via the Dify Dataset
-        API) whether a document with that exact name already exists in the target Knowledge Base, and
-        skips it if so - only files without a matching document get listed.
-        The name it checks depends on "Append commit hash to file names" above: with that OFF, it checks
-        by plain filename, so once ANY version of a file has ever been synced, that filename is
-        considered done forever - even after the file's content later changes. With that ON, the name
-        includes the commit hash, so a changed file gets a new name, is seen as "not yet synced," and
-        gets re-listed.
+        Requires a Dify API key + API base URL (provider credentials) and the dataset ID below.
+        OFF (default): lists every file matching the filters above on every run. ON: skips a file if a
+        document with its exact name already exists in the target Knowledge Base. Whether that name
+        includes a content hash depends on "Append content hash to file names" above - without it, a
+        file is only ever synced once, no matter how its content later changes.
       zh_Hans: >-
-        要先設定好才能用：在這個 provider 的憑證裡填好 Dify API key 跟 API 網址，以及下面的 dataset
-        ID（去哪裡找請看那個欄位的說明）。沒設定好就打開這個選項會直接報錯。
-        關閉（預設）：不管三七二十一，每次執行都列出符合上方過濾條件的所有檔案——簡單，但每次都會重新
-        處理所有檔案。開啟：列出檔案前，會先透過 Dify Dataset API 查詢目標知識庫裡是不是已經有一份「同
-        名」的文件，有的話就跳過這個檔案，只列出還沒有對應文件的檔案。
-        這裡比對的「名稱」會受上面「在檔名加上 commit hash」影響：那個選項關閉時，比對的是純檔名，代表
-        只要這個檔案曾經被同步過一次，之後不管內容怎麼改，這個檔名都會被當成「已經處理過」；那個選項
-        開啟時，名稱裡帶著 commit hash，檔案內容一變，名稱就會不一樣，會被視為「還沒同步過」而重新列出。
+        需要在 provider 憑證裡設定 Dify API key 跟 API 網址，以及下面的 dataset ID。關閉（預設）：每次
+        執行都列出符合上方過濾條件的所有檔案。開啟：如果目標知識庫裡已經有同名文件，就跳過這個檔案。名稱
+        是否包含內容雜湊，取決於上面的「在檔名加上內容雜湊」——沒開的話，檔案只會被同步一次，之後內容
+        怎麼改都不會再同步。
   - name: dataset_id
     type: string
     required: false
@@ -131,40 +111,31 @@ parameters:
       zh_Hans: "6ac5d2f6-28d7-4f1a-94be-73a3aecc7370"
     description:
       en_US: >-
-        Only needed when "Verify against existing knowledge base documents" above is enabled - the
-        plugin has no way to discover it automatically. Where to find it: open the target Knowledge
-        Base in Dify's web UI (the "Documents" page) and look at your browser's address bar - the URL
-        looks like https://your-dify-host/datasets/<dataset_id>/documents; copy the UUID between
-        "datasets/" and "/documents".
+        Required only when "Verify against existing knowledge base documents" above is enabled - the
+        plugin cannot discover it automatically. Find it in the target Knowledge Base's "Documents" page
+        URL: https://your-dify-host/datasets/<dataset_id>/documents.
       zh_Hans: >-
-        只有上方「比對知識庫既有文件」啟用時才需要——插件沒有辦法自動得知這個值。去哪裡找：在 Dify 網頁
-        版打開目標知識庫的「文件」頁面，看瀏覽器網址列，網址長得像
-        https://你的Dify網址/datasets/<dataset_id>/documents，把「datasets/」跟「/documents」中間那段
-        UUID 複製下來就是這個值。
+        只有上方「比對知識庫既有文件」開啟時才需要——插件無法自動得知這個值。去目標知識庫的「文件」頁面看
+        瀏覽器網址列：https://你的Dify網址/datasets/<dataset_id>/documents，中間那段 UUID 就是。
   - name: archive_superseded_versions
     type: boolean
     required: false
     default: false
     label:
-      en_US: Archive superseded versions (needs both toggles above on)
+      en_US: Archive superseded versions (requires both toggles above on)
       zh_Hans: 歸檔舊版本（需要上面兩個開關都打開）
     description:
       en_US: >-
-        Requires both "Verify against existing knowledge base documents" and "Append commit hash to file
-        names" above to be on - otherwise there is no reliable way to tell "an older version of this
-        file" apart from "a completely different file." When a file's content is fetched for real
-        ingestion, and that check confirms this exact commit's version is what's being synced right now,
-        any OTHER existing document for the same file (i.e. tagged with a different, older commit) gets
-        archived - soft-disabled via the Dify Dataset API, not deleted. This happens as part of the same
-        pipeline run that ingests the new version, no separate run needed. Note this only piggybacks on
-        whatever already triggers this pipeline; the plugin itself has no independent scheduler.
+        Requires both "Verify against existing knowledge base documents" and "Append content hash to
+        file names" above - without both, there's no reliable way to tell "an older version of this
+        file" apart from "a different file." When a file's current content is confirmed being ingested,
+        any other document for the same file (tagged with an older content hash) gets archived - soft-
+        disabled via the Dify Dataset API, not deleted - as part of the same pipeline run.
       zh_Hans: >-
-        需要同時開啟上面的「比對知識庫既有文件」與「在檔名加上 commit hash」才有作用——沒有這兩個，沒有
-        可靠的方法分辨「這是同一個檔案的舊版本」還是「根本是不同的檔案」。當某個檔案的內容被真正抓取、
-        準備送進知識庫，而且上面那個比對機制確認「這正是目前這個 commit 的版本正要被同步」時，就會去把
-        同一個檔案的其他既有文件（也就是標記著不同、較舊 commit 的版本）歸檔——是透過 Dify Dataset API
-        軟性下架，不是刪除。這個動作會在同一次真正執行 pipeline、把新版本送進去的過程中順便完成，不需要
-        再多跑一次。這個功能只是搭著這個 pipeline 本來就有的觸發時機順便做，插件本身沒有獨立的排程能力。
+        需要同時開啟上面的「比對知識庫既有文件」與「在檔名加上內容雜湊」——沒有這兩個，無法可靠分辨「這是
+        同一個檔案的舊版本」還是「根本是不同的檔案」。當某個檔案的目前內容確認正在被同步時，這個檔案其他
+        帶著較舊內容雜湊的文件會被歸檔——是透過 Dify Dataset API 軟性下架，不是刪除，跟同步新版本在同一次
+        pipeline 執行裡完成。
 
 output_schema:
   type: object
@@ -174,7 +145,7 @@ output_schema:
       description: Identifier for the configured repository + branch
     page_id:
       type: string
-      description: Opaque identifier encoding the commit, branch and file path
+      description: Opaque identifier encoding the source commit, content hash, branch and file path
     content:
       type: string
       description: The file's raw text content

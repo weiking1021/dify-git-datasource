@@ -1,6 +1,6 @@
-"""Display naming for workspaces/pages, and the commit-tag filename scheme.
+"""Display naming for workspaces/pages, and the content-hash tag filename scheme.
 
-The commit-tag scheme (`_page_name`/`parse_tagged_name`) is what lets
+The content-hash tag scheme (`page_name`/`parse_tagged_name`) is what lets
 "Verify against existing knowledge base documents" tell apart different
 versions of the same file, since the Dify Dataset API only exposes document
 names - see utils/dataset_sync.py for how these get used together.
@@ -22,16 +22,21 @@ def repo_display_name(repo_url: str) -> str:
     return name[: -len(".git")] if name.endswith(".git") else name or repo_url
 
 
-def page_name(path: str, head_sha: str, tag_with_commit: bool) -> str:
+def page_name(path: str, version_tag: str, tag_with_commit: bool) -> str:
+    """`version_tag` is expected to be a file's git blob SHA (content hash) -
+    see utils/git_client.py:list_tree_files - not a commit SHA, so the tag
+    only changes when this file's own content changes, not on every commit
+    anywhere else in the repo.
+    """
     if not tag_with_commit:
         return path
     # Insert the tag before the extension, in the file's own name only (not
     # the directory prefix), so a naive extension-based type check (e.g.
     # ".md") still sees the real extension: "docs/guide.md" becomes
-    # "docs/guide@<sha>.md", not "docs/guide.md@<sha>".
+    # "docs/guide@<tag>.md", not "docs/guide.md@<tag>".
     directory, _, filename = path.rpartition("/")
     stem, dot, ext = filename.rpartition(".")
-    tagged = f"{stem}@{head_sha[:12]}.{ext}" if dot else f"{filename}@{head_sha[:12]}"
+    tagged = f"{stem}@{version_tag[:12]}.{ext}" if dot else f"{filename}@{version_tag[:12]}"
     return f"{directory}/{tagged}" if directory else tagged
 
 
